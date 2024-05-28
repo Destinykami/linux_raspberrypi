@@ -49,6 +49,7 @@ pub mod ioctl;
 #[cfg(CONFIG_KUNIT)]
 pub mod kunit;
 pub mod of;
+pub mod miscdev;
 pub mod iov_iter;
 pub mod mm;
 pub mod pages;
