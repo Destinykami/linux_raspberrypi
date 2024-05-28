@@ -11,7 +11,8 @@
 //! / # sudo echo "hello" > /dev/rust_misc
 //! / # sudo cat /dev/rust_misc  -> Hello
 //! 
-
+use core::result::Result::Ok;
+use core::ops::Deref;
 use kernel::prelude::*;
 use kernel::{
     file::{self, File},
@@ -62,34 +63,47 @@ impl file::Operations for RustFile {
     type Data = Arc<RustMiscdevData>;
     type OpenData = Arc<RustMiscdevData>;
 
-    fn open(_shared: &Arc<RustMiscdevData>, _file: &file::File) -> Result<Self::Data> {
+    fn open(shared: &Arc<RustMiscdevData>, _file: &file::File) -> Result<Self::Data> {
         pr_info!("open in miscdevice\n",);
         //TODO
-        todo!()
+        //todo!()
+        return Ok(shared.clone());
     }
 
     fn read(
-        _shared: ArcBorrow<'_, RustMiscdevData>,
+        shared: ArcBorrow<'_, RustMiscdevData>,
         _file: &File,
-        _writer: &mut impl IoBufferWriter,
-        _offset: u64,
+        writer: &mut impl IoBufferWriter,
+        offset: u64,
     ) -> Result<usize> {
         pr_info!("read in miscdevice\n");
         //TODO
-        todo!()
-        
+        //todo!()
+        let data=shared.deref().inner.lock();
+        if offset>=GLOBALMEM_SIZE as u64 {
+            return Ok(0); //EOF
+        }
+        let read_length = core::cmp::min(GLOBALMEM_SIZE as u64-offset, writer.len() as u64);
+        writer.write_slice(&data[offset as usize..offset as usize + read_length as usize])?;
+        Ok(read_length as usize)
     }
 
     fn write(
-        _shared: ArcBorrow<'_, RustMiscdevData>,
+        shared: ArcBorrow<'_, RustMiscdevData>,
         _file: &File,
-        _reader: &mut impl IoBufferReader,
-        _offset: u64,
+        reader: &mut impl IoBufferReader,
+        offset: u64,
     ) -> Result<usize> {
         pr_info!("write in miscdevice\n");
         //TODO
-        todo!()
-
+        //todo!()
+        if offset>=GLOBALMEM_SIZE as u64 {
+            return Ok(0);
+        }
+        let mut data = shared.deref().inner.lock();
+        let write_length = core::cmp::min(GLOBALMEM_SIZE as u64-offset, reader.len() as u64);
+        reader.read_slice(&mut data[offset as usize..offset as usize + write_length as usize])?;
+        Ok(write_length as usize)
     }
 
     fn release(_data: Self::Data, _file: &File) {
