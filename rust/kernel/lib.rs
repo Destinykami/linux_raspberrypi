@@ -72,7 +72,7 @@ pub mod user_ptr;
 pub mod completion;
 pub mod timekeeping;
 pub mod irq;
-
+pub mod miscdev;
 #[doc(hidden)]
 pub use bindings;
 pub use macros;
